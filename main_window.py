@@ -39,6 +39,7 @@ class MainWindow(QMainWindow):
         self.blind_level = 1
         self.is_started = False
         self.ss_button_show = True
+        self.view_action = list()
         # self.time_value = "00:00"
 
         # For test purpose, after add menu bar then I'll remove it
@@ -167,22 +168,14 @@ class MainWindow(QMainWindow):
         self.menu_file.addAction(self.file_action_exit)
 
         # View Menu - Resolution
-        # self.menu_view = QMenu('View', self.menu_bar)
-        # self.menu_view.setObjectName('menu_view')
-        # self.view_resolution = QMenu('Resolution', self)
-        # self.view_resolution.setObjectName("resolution_action")
-        #
-        # self.view_resolution_fhd = QAction('FHD', self, checkable=True)
-        # self.view_resolution_fhd.setObjectName('fhd')
-        # self.view_resolution_fhd.triggered.connect(self._change_resolution)
-        #
-        # self.view_resolution_add = QAction('Add Resolution', self)
-        # self.view_resolution_add.setObjectName('add_resolution')
-        # self.view_resolution_add.triggered.connect(self._add_resolution)
-        #
-        # self.view_resolution.addAction(self.view_resolution_fhd)
-        # self.view_resolution.addAction(self.view_resolution_add)
-        # self.menu_view.addAction(self.view_resolution.menuAction())
+        self.menu_view = QMenu('View', self.menu_bar)
+        self.menu_view.setObjectName('menu_view')
+        self.view_resolution = QMenu('Resolution', self)
+        self.view_resolution.setObjectName("resolution_action")
+
+        self._init_resolution_action()
+
+        self.menu_view.addAction(self.view_resolution.menuAction())
 
         # Help Menu - Contact
         self.menu_help = QMenu('Help', self.menu_bar)
@@ -194,7 +187,7 @@ class MainWindow(QMainWindow):
 
         self.setMenuBar(self.menu_bar)
         self.menu_bar.addAction(self.menu_file.menuAction())
-        # self.menu_bar.addAction(self.menu_view.menuAction())
+        self.menu_bar.addAction(self.menu_view.menuAction())
         self.menu_bar.addAction(self.menu_help.menuAction())
 
         # cp = QDesktopWidget().availableGeometry()
@@ -270,7 +263,6 @@ class MainWindow(QMainWindow):
             self.tt = self.tt - 1
 
     def _add_resolution(self):
-        self.custom = 0
         input_dialog = ResolutionInputDialog()
         if input_dialog.exec():
             width, height = input_dialog.get_resolution()
@@ -279,23 +271,37 @@ class MainWindow(QMainWindow):
             # Add Error handling (May be message box)
             pass
         else:
-            self.view_resolution_custom = QAction('%dX%d' % (width, height), self, checkable=True)
-            self.view_resolution_custom.setObjectName('%dX%d' % (width, height))
-            self.view_resolution_custom.triggered.connect(self._change_resolution)
-            self.view_resolution.addAction(self.view_resolution_custom)
+            self.view_action.append(QAction('%dx%d' % (width, height), self, checkable=True))
+            self.view_action[-1].setObjectName('%dx%d' % (width, height))
+            self.view_action[-1].triggered.connect(self._change_resolution)
+            self.view_resolution.addAction(self.view_action[-1])
+
+    def _init_resolution_action(self):
+        self.view_action.append(QAction('Add Resolution', self))
+        self.view_action.append(QAction('FHD', self, checkable=True))
+
+        self.view_action[0].setObjectName('add_resolution')
+        self.view_action[0].triggered.connect(self._add_resolution)
+
+        self.view_action[1].setObjectName('1920x1080')
+        self.view_action[1].triggered.connect(self._change_resolution)
+
+        for action in self.view_action:
+            self.view_resolution.addAction(action)
 
     def _change_resolution(self):
 
-        if self.view_resolution_fhd.isChecked():
-            monitor_geometry = QDesktopWidget().availableGeometry()
-            x = monitor_geometry.x()
-            y = monitor_geometry.y()
-            w = 1920
-            h = 1080
-            self.setGeometry(x, y, w, h)
-        elif self.view_resolution_custom.isChecked():
-            object_name = str(self.view_resolution_custom.objectName())
-            print(object_name)
+        for action in self.view_action:
+            if action.isChecked():
+                object_name = str(action.objectName())
+                width, height = int(object_name.split('x')[0]), int(object_name.split('x')[1])
+                monitor_geometry = QDesktopWidget().availableGeometry()
+                x = monitor_geometry.x()
+                y = monitor_geometry.y()
+                # w = monitor_geometry.width()
+                # h = monitor_geometry.height()
+                # TODO: move to Center
+                self.setGeometry(x, y, width, height)
 
     def _contact_me(self):
 
